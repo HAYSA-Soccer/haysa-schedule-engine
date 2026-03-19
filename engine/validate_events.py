@@ -1,5 +1,6 @@
-
 from datetime import datetime
+import yaml
+import os
 
 def validate_events(events):
     """
@@ -10,6 +11,13 @@ def validate_events(events):
 
     valid = []
     errors = []
+
+    # Load field mapping from YAML
+    try:
+        with open("config/fields.yaml") as f:
+            fields_config = yaml.safe_load(f).get("fields", {})
+    except Exception as ex:
+        return [], [f"Failed to load fields.yaml: {ex}"]
 
     for e in events:
         eid = e.get("event_id")
@@ -34,23 +42,23 @@ def validate_events(events):
             errors.append(f"{eid}: Missing location")
             continue
 
-        # Basic field mapping (expand later)
-        field_map = {
-            "SUMNER": "SUMNER",
-            "BUTLER": "BUTLER",
-            "TURF": "TURF",
-        }
-
+        # Try to match ICS location against each field's patterns
         mapped = None
-        for key, val in field_map.items():
-            if key in loc:
-                mapped = val
+
+        for field_name, cfg in fields_config.items():
+            patterns = cfg.get("match", [])
+            for pattern in patterns:
+                if pattern.upper() in loc:
+                    mapped = field_name
+                    break
+            if mapped:
                 break
 
         if not mapped:
             errors.append(f"{eid}: Unknown field location '{loc}'")
             continue
 
+        # Store mapped field
         e["field"] = mapped
         valid.append(e)
 
