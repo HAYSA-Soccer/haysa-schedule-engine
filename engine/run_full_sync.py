@@ -43,6 +43,8 @@ def main():
         print(f"DEBUG: {env_name} startswith =", val[:5])
         print(f"DEBUG: {env_name} endswith =", val[-5:])
 
+        print("DEBUG: CAL_TURF from secret =", repr(os.environ["CAL_TURF"]))
+
         if not val:
             print(f"Skipping {field}: no calendar secret found")
             continue
