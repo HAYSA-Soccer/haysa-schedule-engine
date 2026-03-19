@@ -1,1 +1,18 @@
+fields:
+  TURF:
+    match: ["H-HST"]
+    calendar: ${CAL_TURF}
 
+  BROOKVILLE:
+    match: ["H-B"]
+    calendar: ${CAL_BROOKVILLE}
+
+  BUTLER:
+    match:
+      - "TODO-BUTLER-CODE"
+    calendar: ${CAL_BUTLER}
+
+  SUMNER:
+    match:
+      - "TODO-SUMNER-CODE"
+    calendar: ${CAL_SUMNER}
