@@ -19,6 +19,9 @@ def main():
     print(f"Valid events: {len(valid)}")
     print(f"Errors: {len(errors)}")
 
+    # 🔍 DEBUG: Which repo is this workflow running in?
+    print("DEBUG: running in repo =", os.environ.get("GITHUB_REPOSITORY"))
+
     # Group events by field
     by_field = {}
     for e in valid:
