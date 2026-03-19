@@ -3,6 +3,7 @@ from ics_utils.fetch_ics import fetch_ics
 from ics_utils.parse_ics import parse_ics
 from engine.validate_events import validate_events
 from engine.sync_calendar import sync_events_to_calendar
+from engine.sheets import upsert_events_to_sheet   # ⭐ NEW IMPORT
 
 def main():
     ics_url = os.environ["ICS_URL"]
@@ -25,6 +26,11 @@ def main():
     # 🔍 DEBUG: What EXACT value is GitHub passing for CAL_TURF?
     print("DEBUG: CAL_TURF repr =", repr(os.environ.get("CAL_TURF")))
     print("DEBUG: CAL_TURF length =", len(os.environ.get("CAL_TURF", "")))
+
+    # ⭐ NEW STEP: Write events into the Master Calendar sheet
+    print("Updating Google Sheet...")
+    upsert_events_to_sheet(valid)
+    print("Sheet updated.")
 
     # Group events by field
     by_field = {}
@@ -50,7 +56,7 @@ def main():
 
         print(f"Syncing {field} ({val}) with {len(evs)} events...")
 
-        # ⭐ UPDATED: pass field name into sync function
+        # ⭐ Pass field name into sync function
         sync_events_to_calendar(evs, val, field)
 
     print("Done.")
