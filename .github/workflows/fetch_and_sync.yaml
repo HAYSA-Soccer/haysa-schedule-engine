@@ -1,9 +1,9 @@
 name: Fetch and Sync Schedule
 
 on:
-  workflow_dispatch:    # Manual run button
+  workflow_dispatch:
   schedule:
-    - cron: "0 3 * * *"   # Runs daily at 3 AM Eastern
+    - cron: "0 3 * * *"
 
 jobs:
   run-engine:
@@ -22,6 +22,9 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
+
+      - name: Add repo root to PYTHONPATH
+        run: echo "PYTHONPATH=$PWD" >> $GITHUB_ENV
 
       - name: Run engine
         env:
