@@ -34,5 +34,6 @@ jobs:
           CAL_SUMNER: ${{ secrets.CAL_SUMNER }}
           CAL_BUTLER: ${{ secrets.CAL_BUTLER }}
           CAL_TURF: ${{ secrets.CAL_TURF }}
+          CAL_BROOKVILLE: ${{ secrets.CAL_BROOKVILLE }}   # ← missing line
         run: |
           python engine/run_full_sync.py
