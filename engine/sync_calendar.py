@@ -13,22 +13,33 @@ def get_calendar_service():
     )
     return build("calendar", "v3", credentials=creds)
 
-def sync_events_to_calendar(events, calendar_id):
+def sync_events_to_calendar(events, calendar_id, field_name):
     """
     Syncs validated events to a specific Google Calendar.
     - Creates new events
     - Updates existing events
     - Deletes removed events
     """
+
+    print("\n==============================")
+    print("DEBUG: Starting sync for field:", field_name)
+    print("DEBUG: Calendar ID:", calendar_id)
+    print("==============================\n")
+
     service = get_calendar_service()
 
     # Fetch existing events from the calendar
-    existing = service.events().list(
-        calendarId=calendar_id,
-        maxResults=2500,
-        singleEvents=True,
-        orderBy="startTime"
-    ).execute().get("items", [])
+    try:
+        existing = service.events().list(
+            calendarId=calendar_id,
+            maxResults=2500,
+            singleEvents=True,
+            orderBy="startTime"
+        ).execute().get("items", [])
+    except Exception as err:
+        print("ERROR: Failed to fetch existing events for calendar:", calendar_id)
+        print("ERROR DETAILS:", err)
+        raise
 
     existing_by_id = {e.get("id"): e for e in existing}
 
@@ -39,6 +50,14 @@ def sync_events_to_calendar(events, calendar_id):
         eid = e["event_id"]
         seen_ids.add(eid)
 
+        # 🔥 CRITICAL DEBUG LINES
+        print("---- EVENT DEBUG ----")
+        print("Field:", field_name)
+        print("Event ID:", eid)
+        print("Calendar ID being used:", calendar_id)
+        print("Summary:", e["summary"])
+        print("----------------------")
+
         event_body = {
             "id": eid,
             "summary": e["summary"],
@@ -48,24 +67,38 @@ def sync_events_to_calendar(events, calendar_id):
             "end": {"dateTime": e["end"].isoformat(), "timeZone": "America/New_York"},
         }
 
-        if eid in existing_by_id:
-            # Update existing event
-            service.events().update(
-                calendarId=calendar_id,
-                eventId=eid,
-                body=event_body
-            ).execute()
-        else:
-            # Create new event
-            service.events().insert(
-                calendarId=calendar_id,
-                body=event_body
-            ).execute()
+        try:
+            if eid in existing_by_id:
+                # Update existing event
+                service.events().update(
+                    calendarId=calendar_id,
+                    eventId=eid,
+                    body=event_body
+                ).execute()
+            else:
+                # Create new event
+                service.events().insert(
+                    calendarId=calendar_id,
+                    body=event_body
+                ).execute()
+        except Exception as err:
+            print("ERROR syncing event:", eid)
+            print("ERROR DETAILS:", err)
+            print("Field:", field_name)
+            print("Calendar ID:", calendar_id)
+            raise
 
     # Delete events that no longer exist
     for eid, ev in existing_by_id.items():
         if eid not in seen_ids:
-            service.events().delete(
-                calendarId=calendar_id,
-                eventId=eid
-            ).execute()
+            try:
+                service.events().delete(
+                    calendarId=calendar_id,
+                    eventId=eid
+                ).execute()
+            except Exception as err:
+                print("ERROR deleting event:", eid)
+                print("ERROR DETAILS:", err)
+                print("Field:", field_name)
+                print("Calendar ID:", calendar_id)
+                raise
