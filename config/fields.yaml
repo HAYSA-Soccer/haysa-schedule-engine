@@ -1,10 +1,14 @@
 fields:
   TURF:
-    match: ["H-HST"]
+    match:
+      - "H-HST"
+      - "Holbrook High School"
     calendar: ${CAL_TURF}
 
   BROOKVILLE:
-    match: ["H-B"]
+    match:
+      - "H-B"
+      - "Holbrook Brookville Field"
     calendar: ${CAL_BROOKVILLE}
 
   BUTLER:
