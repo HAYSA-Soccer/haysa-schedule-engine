@@ -24,6 +24,7 @@ def main():
 
     # 🔍 DEBUG: What EXACT value is GitHub passing for CAL_TURF?
     print("DEBUG: CAL_TURF repr =", repr(os.environ.get("CAL_TURF")))
+    print("DEBUG: CAL_TURF length =", len(os.environ.get("CAL_TURF", "")))
 
     # Group events by field
     by_field = {}
