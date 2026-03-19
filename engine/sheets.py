@@ -1,3 +1,8 @@
+import json
+import os
+
+SERVICE_ACCOUNT_INFO = json.loads(os.environ["GOOGLE_SERVICE_ACCOUNT_KEY"])
+
 import gspread
 from google.oauth2.service_account import Credentials
 
