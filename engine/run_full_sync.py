@@ -33,15 +33,22 @@ def main():
         by_field.setdefault(field, []).append(e)
 
     # Sync each field calendar
+    # Sync each field calendar
     for field, evs in by_field.items():
         env_name = f"CAL_{field}"
-        if env_name not in os.environ:
+        val = os.environ.get(env_name, "")
+
+        # 🔍 NEW DEBUG LINES
+        print(f"DEBUG: {env_name} length =", len(val))
+        print(f"DEBUG: {env_name} startswith =", val[:5])
+        print(f"DEBUG: {env_name} endswith =", val[-5:])
+
+        if not val:
             print(f"Skipping {field}: no calendar secret found")
             continue
-
-        cal_id = os.environ[env_name]
-        print(f"Syncing {field} ({cal_id}) with {len(evs)} events...")
-        sync_events_to_calendar(evs, cal_id)
+    
+        print(f"Syncing {field} ({val}) with {len(evs)} events...")
+        sync_events_to_calendar(evs, val)
 
     print("Done.")
 
