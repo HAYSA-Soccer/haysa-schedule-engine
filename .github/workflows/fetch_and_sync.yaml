@@ -32,4 +32,4 @@ jobs:
           CAL_BUTLER: ${{ secrets.CAL_BUTLER }}
           CAL_TURF: ${{ secrets.CAL_TURF }}
         run: |
-          python engine/run_fetch_and_write.py
+          python engine/run_full_sync.py
