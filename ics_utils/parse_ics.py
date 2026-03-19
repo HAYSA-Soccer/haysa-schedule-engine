@@ -1,6 +1,6 @@
 from ics import Calendar
 from datetime import datetime
-import re
+import hashlib
 
 def parse_ics(ics_text: str):
     """
@@ -10,9 +10,9 @@ def parse_ics(ics_text: str):
     events = []
 
     for e in cal.events:
-        # Sanitize UID for Google Calendar compatibility
+        # Generate a safe, deterministic Google‑Calendar‑compatible event ID
         raw_uid = e.uid or ""
-        safe_uid = re.sub(r"[^A-Za-z0-9_-]", "-", raw_uid)
+        safe_uid = hashlib.sha256(raw_uid.encode("utf-8")).hexdigest()[:32]
 
         events.append({
             "event_id": safe_uid,
