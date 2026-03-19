@@ -1,6 +1,6 @@
 import os
-from ics.fetch_ics import fetch_ics
-from ics.parse_ics import parse_ics
+from ics_utils.fetch_ics import fetch_ics
+from ics_utils.parse_ics import parse_ics
 from engine.validate_events import validate_events
 from engine.sync_calendar import sync_events_to_calendar
 
