@@ -1,5 +1,6 @@
 from ics import Calendar
 from datetime import datetime
+import re
 
 def parse_ics(ics_text: str):
     """
@@ -9,8 +10,12 @@ def parse_ics(ics_text: str):
     events = []
 
     for e in cal.events:
+        # Sanitize UID for Google Calendar compatibility
+        raw_uid = e.uid or ""
+        safe_uid = re.sub(r"[^A-Za-z0-9_-]", "-", raw_uid)
+
         events.append({
-            "event_id": e.uid,
+            "event_id": safe_uid,
             "start": e.begin.datetime,
             "end": e.end.datetime,
             "summary": e.name,
