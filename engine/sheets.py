@@ -29,6 +29,7 @@ def upsert_events_to_sheet(events):
     UPSERT events into the Events tab of the Master Calendar sheet.
     - Updates rows where event_id already exists
     - Inserts new rows for new event_ids
+    - Removes rows for events no longer in the ICS feed
     """
 
     sheet_id = os.environ["GOOGLE_SHEET_ID"]
@@ -40,26 +41,36 @@ def upsert_events_to_sheet(events):
     # Map event_id → row index
     existing_map = {row[0]: idx for idx, row in enumerate(existing)}
 
-    updated_rows = existing[:]  # copy
+    # Build a set of ICS event_ids
+    incoming_ids = {e["event_id"] for e in events}
 
+    updated_rows = []
+
+    # --- RECONCILE: keep only rows whose event_id still exists ---
+    for row in existing:
+        if row[0] in incoming_ids:
+            updated_rows.append(row)
+
+    # --- UPSERT incoming events ---
     for e in events:
+        # Local date/time (correct)
         date = e["start"].date().isoformat()
-        start_time = e["start"].time().isoformat(timespec="minutes")
-        end_time = e["end"].time().isoformat(timespec="minutes")
+        start_time = e["start"].strftime("%H:%M")
+        end_time = e["end"].strftime("%H:%M")
 
         row = [
             e["event_id"],
             date,
             start_time,
             end_time,
-            e.get("field", ""),
+            e.get("field", ""),                 # validator sets this
             e.get("type", "game"),
             e.get("team", ""),
-            e.get("summary", ""),          # ⭐ NEW: write summary into the sheet
+            e.get("summary") or "",             # FIXED: never write None
             "ICS",
             "active",
             e.get("validation_status", "OK"),
-            ""  # calendar_event_id
+            ""
         ]
 
         if e["event_id"] in existing_map:
