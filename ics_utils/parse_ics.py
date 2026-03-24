@@ -34,8 +34,8 @@ def parse_ics(ics_text: str):
 
         events.append({
             "event_id": safe_uid,
-            "start": start_utc.isoformat(),
-            "end": end_utc.isoformat(),
+            "start": start_utc,   # datetime, not string
+            "end": end_utc,       # datetime, not string
             "summary": e.name,
             "location": e.location,
             "description": e.description,
