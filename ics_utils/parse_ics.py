@@ -3,6 +3,8 @@ from datetime import datetime
 import hashlib
 import pytz
 
+print(">>> DEBUG: USING parse_ics.py FROM ENGINE DIRECTORY <<<")
+
 def parse_ics(ics_text: str):
     cal = Calendar(ics_text)
     events = []
