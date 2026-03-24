@@ -1,60 +1,35 @@
 from ics import Calendar
-from datetime import datetime
 import hashlib
 import pytz
 
-print(">>> DEBUG: USING parse_ics.py FROM ENGINE DIRECTORY <<<")
-
 def parse_ics(ics_text: str):
-    print(">>> DEBUG: parse_ics() FUNCTION EXECUTED FROM:", __file__)
-
     cal = Calendar(ics_text)
     events = []
 
+    # Always convert ICS timestamps into America/New_York
     local_tz = pytz.timezone("America/New_York")
-
-    # IDs we want to inspect (will update after seeing real IDs)
-    debug_ids = {
-        "5620be3c92ce1ccc914c853e9051171b",
-        "80816a59e641cb9e0672b23791d37c59",
-        "c12186c4e9b8f1b4892c50eeb614cc78",
-    }
 
     for e in cal.events:
         raw_uid = e.uid or ""
         safe_uid = hashlib.sha256(raw_uid.encode("utf-8")).hexdigest()[:32]
 
-        # 🔥 Print every event_id + raw ICS begin/end/location/summary
-        print("DEBUG:", safe_uid, e.begin, e.end, e.location, e.name)
-
-        # --- DEBUG BLOCK: print raw ICS info BEFORE any conversion ---
-        if safe_uid in debug_ids:
-            print("\n================ RAW ICS EVENT ================")
-            print("event_id:", safe_uid)
-            print("SUMMARY:", e.name)
-            print("LOCATION:", e.location)
-            print("BEGIN (ics.py object):", e.begin, "repr:", repr(e.begin))
-            print("END   (ics.py object):", e.end,   "repr:", repr(e.end))
-            print("BEGIN.datetime:", e.begin.datetime, "tzinfo:", e.begin.datetime.tzinfo)
-            print("END.datetime:  ", e.end.datetime,   "tzinfo:", e.end.datetime.tzinfo)
-            print("==============================================\n")
-
-        # --- FIX: handle naive vs aware datetimes ---
+        # Extract raw datetime objects from ics.py
         start_dt = e.begin.datetime
         end_dt = e.end.datetime
 
-        # Convert ICS datetime → LOCAL Eastern Time
-        if start_dt.tzinfo is None:
-            start_local = local_tz.localize(start_dt)
-        else:
+        # --- FIXED TIMEZONE LOGIC ---
+        # If the ICS timestamp has tzinfo (e.g., +00:00), treat it as UTC and convert.
+        # If it is naive, assume it is already local.
+        if start_dt.tzinfo is not None:
             start_local = start_dt.astimezone(local_tz)
-
-        if end_dt.tzinfo is None:
-            end_local = local_tz.localize(end_dt)
         else:
-            end_local = end_dt.astimezone(local_tz)
+            start_local = local_tz.localize(start_dt)
 
-        # Store LOCAL times directly
+        if end_dt.tzinfo is not None:
+            end_local = end_dt.astimezone(local_tz)
+        else:
+            end_local = local_tz.localize(end_dt)
+
         events.append({
             "event_id": safe_uid,
             "start": start_local,
