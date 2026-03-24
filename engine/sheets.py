@@ -38,18 +38,14 @@ def upsert_events_to_sheet(events):
     # Fetch existing rows (skip header)
     existing = sheet.get_all_values()[1:]
 
-    # Map event_id → row index
-    existing_map = {row[0]: idx for idx, row in enumerate(existing)}
-
     # Build a set of ICS event_ids
     incoming_ids = {e["event_id"] for e in events}
 
-    updated_rows = []
-
     # --- RECONCILE: keep only rows whose event_id still exists ---
-    for row in existing:
-        if row[0] in incoming_ids:
-            updated_rows.append(row)
+    updated_rows = [row for row in existing if row[0] in incoming_ids]
+
+    # --- REBUILD INDEX MAP AFTER RECONCILIATION ---
+    existing_map = {row[0]: idx for idx, row in enumerate(updated_rows)}
 
     # --- UPSERT incoming events ---
     for e in events:
@@ -79,6 +75,7 @@ def upsert_events_to_sheet(events):
             updated_rows[idx] = row
         else:
             # Insert new row
+            existing_map[e["event_id"]] = len(updated_rows)
             updated_rows.append(row)
 
     # Write back (header + rows)
