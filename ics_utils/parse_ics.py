@@ -17,7 +17,7 @@ def parse_ics(ics_text: str):
         start_dt = e.begin.datetime
         end_dt = e.end.datetime
 
-        # If datetime has no tzinfo → treat as LOCAL time
+        # Convert ICS datetime → LOCAL Eastern Time
         if start_dt.tzinfo is None:
             start_local = local_tz.localize(start_dt)
         else:
@@ -28,14 +28,15 @@ def parse_ics(ics_text: str):
         else:
             end_local = end_dt.astimezone(local_tz)
 
-        # Convert to UTC for Sheets
-        start_utc = start_local.astimezone(pytz.utc)
-        end_utc = end_local.astimezone(pytz.utc)
+        # ❌ REMOVE UTC conversion — this caused the midnight rollover
+        # start_utc = start_local.astimezone(pytz.utc)
+        # end_utc = end_local.astimezone(pytz.utc)
 
+        # ✅ STORE LOCAL TIMES DIRECTLY
         events.append({
             "event_id": safe_uid,
-            "start": start_utc,   # datetime, not string
-            "end": end_utc,       # datetime, not string
+            "start": start_local,   # now local Eastern time
+            "end": end_local,       # now local Eastern time
             "summary": e.name,
             "location": e.location,
             "description": e.description,
