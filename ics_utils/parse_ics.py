@@ -13,7 +13,7 @@ def parse_ics(ics_text: str):
 
     local_tz = pytz.timezone("America/New_York")
 
-    # IDs we want to inspect (may need updating after printing all IDs)
+    # IDs we want to inspect (will update after seeing real IDs)
     debug_ids = {
         "5620be3c92ce1ccc914c853e9051171b",
         "80816a59e641cb9e0672b23791d37c59",
@@ -24,8 +24,8 @@ def parse_ics(ics_text: str):
         raw_uid = e.uid or ""
         safe_uid = hashlib.sha256(raw_uid.encode("utf-8")).hexdigest()[:32]
 
-        # 🔥 NEW: Print every event_id so we can find the real ones
-        print("DEBUG: event_id:", safe_uid)
+        # 🔥 Print every event_id + raw ICS begin/end/location/summary
+        print("DEBUG:", safe_uid, e.begin, e.end, e.location, e.name)
 
         # --- DEBUG BLOCK: print raw ICS info BEFORE any conversion ---
         if safe_uid in debug_ids:
