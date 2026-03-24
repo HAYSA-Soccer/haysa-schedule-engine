@@ -55,10 +55,11 @@ def upsert_events_to_sheet(events):
             e.get("field", ""),
             e.get("type", "game"),
             e.get("team", ""),
+            e.get("summary", ""),          # ⭐ NEW: write summary into the sheet
             "ICS",
             "active",
             e.get("validation_status", "OK"),
-            ""  # calendar_event_id (optional)
+            ""  # calendar_event_id
         ]
 
         if e["event_id"] in existing_map:
@@ -72,7 +73,7 @@ def upsert_events_to_sheet(events):
     # Write back (header + rows)
     header = [
         "event_id", "date", "start_time", "end_time", "field",
-        "type", "team", "source", "status", "validation_status",
+        "type", "team", "summary", "source", "status", "validation_status",
         "calendar_event_id"
     ]
 
