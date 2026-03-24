@@ -9,9 +9,28 @@ def parse_ics(ics_text: str):
 
     local_tz = pytz.timezone("America/New_York")
 
+    # IDs we want to inspect
+    debug_ids = {
+        "5620be3c92ce1ccc914c853e9051171b",
+        "80816a59e641cb9e0672b23791d37c59",
+        "c12186c4e9b8f1b4892c50eeb614cc78",
+    }
+
     for e in cal.events:
         raw_uid = e.uid or ""
         safe_uid = hashlib.sha256(raw_uid.encode("utf-8")).hexdigest()[:32]
+
+        # --- DEBUG BLOCK: print raw ICS info BEFORE any conversion ---
+        if safe_uid in debug_ids:
+            print("\n================ RAW ICS EVENT ================")
+            print("event_id:", safe_uid)
+            print("SUMMARY:", e.name)
+            print("LOCATION:", e.location)
+            print("BEGIN (ics.py object):", e.begin, "repr:", repr(e.begin))
+            print("END   (ics.py object):", e.end,   "repr:", repr(e.end))
+            print("BEGIN.datetime:", e.begin.datetime, "tzinfo:", e.begin.datetime.tzinfo)
+            print("END.datetime:  ", e.end.datetime,   "tzinfo:", e.end.datetime.tzinfo)
+            print("==============================================\n")
 
         # --- FIX: handle naive vs aware datetimes ---
         start_dt = e.begin.datetime
@@ -28,15 +47,11 @@ def parse_ics(ics_text: str):
         else:
             end_local = end_dt.astimezone(local_tz)
 
-        # ❌ REMOVE UTC conversion — this caused the midnight rollover
-        # start_utc = start_local.astimezone(pytz.utc)
-        # end_utc = end_local.astimezone(pytz.utc)
-
-        # ✅ STORE LOCAL TIMES DIRECTLY
+        # Store LOCAL times directly
         events.append({
             "event_id": safe_uid,
-            "start": start_local,   # now local Eastern time
-            "end": end_local,       # now local Eastern time
+            "start": start_local,
+            "end": end_local,
             "summary": e.name,
             "location": e.location,
             "description": e.description,
