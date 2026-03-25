@@ -3,6 +3,7 @@ import os
 import gspread
 from google.oauth2.service_account import Credentials
 from datetime import datetime
+import pytz
 
 SERVICE_ACCOUNT_INFO = json.loads(os.environ["GOOGLE_SERVICE_ACCOUNT_KEY"])
 
@@ -45,6 +46,8 @@ def classify_event(e):
 # -----------------------------
 # WRITE LAST UPDATED TIMESTAMP
 # -----------------------------
+
+
 def update_last_updated_timestamp(sheet_id):
     creds = Credentials.from_service_account_info(
         SERVICE_ACCOUNT_INFO,
@@ -59,7 +62,10 @@ def update_last_updated_timestamp(sheet_id):
         system_sheet = spreadsheet.add_worksheet(title="System", rows=10, cols=2)
         system_sheet.update_acell("A1", "last_ics_update")
 
-    now = datetime.now().strftime("%Y-%m-%d %I:%M %p")
+    # Convert to Eastern Time
+    eastern = pytz.timezone("America/New_York")
+    now = datetime.now(eastern).strftime("%Y-%m-%d %I:%M %p")
+
     system_sheet.update_acell("B1", now)
 
 
