@@ -46,10 +46,6 @@ def classify_event(e):
 # WRITE LAST UPDATED TIMESTAMP
 # -----------------------------
 def update_last_updated_timestamp(sheet_id):
-    """
-    Writes the current timestamp into System!B1.
-    Requires a 'System' tab with 'last_ics_update' in A1.
-    """
     creds = Credentials.from_service_account_info(
         SERVICE_ACCOUNT_INFO,
         scopes=SCOPES
@@ -60,12 +56,11 @@ def update_last_updated_timestamp(sheet_id):
     try:
         system_sheet = spreadsheet.worksheet("System")
     except gspread.exceptions.WorksheetNotFound:
-        # Create the sheet if it doesn't exist
         system_sheet = spreadsheet.add_worksheet(title="System", rows=10, cols=2)
-        system_sheet.update("A1", "last_ics_update")
+        system_sheet.update_acell("A1", "last_ics_update")
 
     now = datetime.now().strftime("%Y-%m-%d %I:%M %p")
-    system_sheet.update("B1", now)
+    system_sheet.update_acell("B1", now)
 
 
 # -----------------------------
