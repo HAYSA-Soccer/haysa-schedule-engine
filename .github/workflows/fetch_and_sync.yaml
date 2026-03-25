@@ -3,7 +3,7 @@ name: Fetch and Sync Schedule
 on:
   workflow_dispatch:
   schedule:
-    - cron: "0 3 * * *"
+    - cron: "*/5 * * * *"   # Run every 5 minutes
 
 jobs:
   run-engine:
@@ -34,6 +34,6 @@ jobs:
           CAL_SUMNER: ${{ secrets.CAL_SUMNER }}
           CAL_BUTLER: ${{ secrets.CAL_BUTLER }}
           CAL_TURF: ${{ secrets.CAL_TURF }}
-          CAL_BROOKVILLE: ${{ secrets.CAL_BROOKVILLE }}   # ← missing line
+          CAL_BROOKVILLE: ${{ secrets.CAL_BROOKVILLE }}
         run: |
           python engine/run_full_sync.py
