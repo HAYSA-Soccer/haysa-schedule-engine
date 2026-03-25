@@ -23,6 +23,10 @@ def get_sheet(sheet_id: str, tab_name="Events"):
     spreadsheet = client.open_by_key(sheet_id)
     return spreadsheet.worksheet(tab_name)
 
+
+# -----------------------------
+# CLASSIFICATION LOGIC
+# -----------------------------
 def classify_event(e):
     summary = (e.get("summary") or "").lower().strip()
 
@@ -36,8 +40,37 @@ def classify_event(e):
 
     # Default: treat as practice
     return "practice"
-    
 
+
+# -----------------------------
+# WRITE LAST UPDATED TIMESTAMP
+# -----------------------------
+def update_last_updated_timestamp(sheet_id):
+    """
+    Writes the current timestamp into System!B1.
+    Requires a 'System' tab with 'last_ics_update' in A1.
+    """
+    creds = Credentials.from_service_account_info(
+        SERVICE_ACCOUNT_INFO,
+        scopes=SCOPES
+    )
+    client = gspread.authorize(creds)
+    spreadsheet = client.open_by_key(sheet_id)
+
+    try:
+        system_sheet = spreadsheet.worksheet("System")
+    except gspread.exceptions.WorksheetNotFound:
+        # Create the sheet if it doesn't exist
+        system_sheet = spreadsheet.add_worksheet(title="System", rows=10, cols=2)
+        system_sheet.update("A1", "last_ics_update")
+
+    now = datetime.now().strftime("%Y-%m-%d %I:%M %p")
+    system_sheet.update("B1", now)
+
+
+# -----------------------------
+# MAIN UPSERT LOGIC
+# -----------------------------
 def upsert_events_to_sheet(events):
     """
     UPSERT events into the Events tab of the Master Calendar sheet.
@@ -63,7 +96,6 @@ def upsert_events_to_sheet(events):
 
     # --- UPSERT incoming events ---
     for e in events:
-        # Local date/time (correct)
         date = e["start"].date().isoformat()
         start_time = e["start"].strftime("%H:%M")
         end_time = e["end"].strftime("%H:%M")
@@ -74,7 +106,7 @@ def upsert_events_to_sheet(events):
             start_time,
             end_time,
             e.get("field", ""),                 # validator sets this
-            classify_event(e),                  # <-- CLASSIFICATION BASED ON LEXICON IDENTIFICATION
+            classify_event(e),                  # <-- CLASSIFICATION
             e.get("team", ""),
             e.get("summary") or "",
             "ICS",
@@ -84,11 +116,9 @@ def upsert_events_to_sheet(events):
         ]
 
         if e["event_id"] in existing_map:
-            # Update existing row
             idx = existing_map[e["event_id"]]
             updated_rows[idx] = row
         else:
-            # Insert new row
             existing_map[e["event_id"]] = len(updated_rows)
             updated_rows.append(row)
 
@@ -102,3 +132,8 @@ def upsert_events_to_sheet(events):
     sheet.clear()
     sheet.append_row(header)
     sheet.append_rows(updated_rows, value_input_option="USER_ENTERED")
+
+    # -----------------------------
+    # UPDATE LAST UPDATED TIMESTAMP
+    # -----------------------------
+    update_last_updated_timestamp(sheet_id)
