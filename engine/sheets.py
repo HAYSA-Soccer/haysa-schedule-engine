@@ -23,6 +23,20 @@ def get_sheet(sheet_id: str, tab_name="Events"):
     spreadsheet = client.open_by_key(sheet_id)
     return spreadsheet.worksheet(tab_name)
 
+def classify_event(e):
+    summary = (e.get("summary") or "").lower().strip()
+
+    # Games
+    if "vs" in summary:
+        return "game"
+
+    # Practices
+    if "practice" in summary:
+        return "practice"
+
+    # Default: treat as practice
+    return "practice"
+    
 
 def upsert_events_to_sheet(events):
     """
@@ -60,9 +74,9 @@ def upsert_events_to_sheet(events):
             start_time,
             end_time,
             e.get("field", ""),                 # validator sets this
-            e.get("type", "game"),
+            classify_event(e),                  # <-- CLASSIFICATION BASED ON LEXICON IDENTIFICATION
             e.get("team", ""),
-            e.get("summary") or "",             # FIXED: never write None
+            e.get("summary") or "",
             "ICS",
             "active",
             e.get("validation_status", "OK"),
