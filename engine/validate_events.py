@@ -12,7 +12,7 @@ def validate_events(events):
     valid = []
     errors = []
 
-    # Load YAML for game mapping (optional)
+    # Load YAML for optional game mapping
     try:
         with open("config/fields.yaml") as f:
             fields_config = yaml.safe_load(f).get("fields", {})
@@ -35,7 +35,9 @@ def validate_events(events):
             errors.append(f"{eid}: Missing summary")
             continue
 
-        loc = (e.get("location") or "").strip()
+        loc_raw = e.get("location") or ""
+        loc = loc_raw.lower().strip()
+
         if not loc:
             errors.append(f"{eid}: Missing location")
             continue
@@ -45,18 +47,27 @@ def validate_events(events):
         is_game = "vs" in summary
 
         # ----------------------------------------------------
-        # PRACTICES → USE ICS LOCATION EXACTLY AS PROVIDED
+        # HOME FILTER — ONLY LOAD HOLBROOK + AVON EVENTS
+        # ----------------------------------------------------
+        is_home = ("holbrook" in loc) or ("avon" in loc)
+
+        if not is_home:
+            # Skip away events entirely
+            continue
+
+        # ----------------------------------------------------
+        # PRACTICES → USE RAW ICS LOCATION
         # ----------------------------------------------------
         if is_practice:
-            e["field"] = loc
+            e["field"] = loc_raw.strip()
             valid.append(e)
             continue
 
         # ----------------------------------------------------
-        # GAMES → OPTIONAL YAML MAPPING (if desired)
+        # GAMES → OPTIONAL YAML MAPPING
         # ----------------------------------------------------
         mapped = None
-        loc_upper = loc.upper()
+        loc_upper = loc_raw.upper()
 
         for field_name, cfg in fields_config.items():
             patterns = cfg.get("match", [])
@@ -71,7 +82,7 @@ def validate_events(events):
         if mapped:
             e["field"] = mapped
         else:
-            e["field"] = loc
+            e["field"] = loc_raw.strip()
 
         valid.append(e)
 
