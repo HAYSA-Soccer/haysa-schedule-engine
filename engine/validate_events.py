@@ -2,31 +2,63 @@ from datetime import datetime
 import yaml
 import os
 
-def extract_surface_from_location(loc: str):
+def extract_abbreviation_from_location(loc: str):
     """
-    Extracts surface-level field info from ICS location strings.
-    Examples:
-      "H-HST1" → "TURF1"
-      "H-HST 1" → "TURF1"
-      "Turf 1" → "TURF1"
-      "Holbrook High School Turf Field 1" → "TURF1"
+    Convert ICS location strings into the field abbreviations
+    used by the Apps Script backend (H-HST1, H-HST2, H-BP1A, etc.)
     """
     if not loc:
         return None
 
-    cleaned = loc.replace(" ", "").upper()
+    cleaned = loc.lower()
 
-    # TURF surfaces
-    if "H-HST1" in cleaned or "TURF1" in cleaned:
-        return "TURF1"
-    if "H-HST2" in cleaned or "TURF2" in cleaned:
-        return "TURF2"
+    # -------------------------
+    # HOLBROOK TURF COMPLEX
+    # -------------------------
+    if "turf 1" in cleaned:
+        return "H-HST1"
+    if "turf 2" in cleaned:
+        return "H-HST2"
+    if "turf" in cleaned:
+        return "H-HST"   # full field
 
-    # BROOKVILLE surfaces
-    if "H-B1" in cleaned or "BROOKVILLE1" in cleaned:
-        return "BROOKVILLE1"
-    if "H-B2" in cleaned or "BROOKVILLE2" in cleaned:
-        return "BROOKVILLE2"
+    # -------------------------
+    # BROOKVILLE COMPLEX
+    # -------------------------
+    if "brookville" in cleaned and "1" in cleaned:
+        return "H-BP1A"   # adjust if needed
+    if "brookville" in cleaned and "2" in cleaned:
+        return "H-BP2A"
+    if "brookville" in cleaned:
+        return "H-B"      # full field
+
+    # -------------------------
+    # SUMNER
+    # -------------------------
+    if "sumner" in cleaned and "1" in cleaned:
+        return "H-Su1"
+    if "sumner" in cleaned and "2" in cleaned:
+        return "H-Su2"
+
+    # -------------------------
+    # SEAN JOYCE
+    # -------------------------
+    if "sean joyce" in cleaned and "3" in cleaned:
+        return "H-SJ3"
+    if "sean joyce" in cleaned and "4" in cleaned:
+        return "H-SJ4"
+
+    # -------------------------
+    # AVON BUTLER
+    # -------------------------
+    if "butler" in cleaned and "1" in cleaned:
+        return "A-B1"
+    if "butler" in cleaned and "2" in cleaned:
+        return "A-B2"
+    if "butler" in cleaned and "3" in cleaned:
+        return "A-B3"
+    if "butler" in cleaned and "4" in cleaned:
+        return "A-B4"
 
     return None
 
@@ -41,7 +73,7 @@ def validate_events(events):
     valid = []
     errors = []
 
-    # Load field mapping from YAML
+    # Load field mapping from YAML (still used for games)
     try:
         with open("config/fields.yaml") as f:
             fields_config = yaml.safe_load(f).get("fields", {})
@@ -51,7 +83,7 @@ def validate_events(events):
     for e in events:
         eid = e.get("event_id")
 
-        # Check required fields
+        # Required fields
         if not e.get("start") or not e.get("end"):
             errors.append(f"{eid}: Missing start or end time")
             continue
@@ -64,9 +96,7 @@ def validate_events(events):
             errors.append(f"{eid}: Missing summary")
             continue
 
-        # Normalize location
-        loc = (e.get("location") or "").strip().upper()
-
+        loc = (e.get("location") or "").strip()
         if not loc:
             errors.append(f"{eid}: Missing location")
             continue
@@ -76,25 +106,26 @@ def validate_events(events):
         is_game = "vs" in summary
 
         # -----------------------------
-        # PRACTICE: Use ICS surface directly
+        # PRACTICES → USE ICS LOCATION
         # -----------------------------
         if is_practice:
-            surface = extract_surface_from_location(loc)
-            if surface:
-                e["field"] = surface
+            abbr = extract_abbreviation_from_location(loc)
+            if abbr:
+                e["field"] = abbr
                 valid.append(e)
                 continue
-            # If no surface match, fall back to YAML mapping
+            # fallback to YAML if needed
 
         # -----------------------------
-        # GAME or fallback: YAML mapping
+        # GAMES → USE YAML MAPPING
         # -----------------------------
         mapped = None
+        loc_upper = loc.upper()
 
         for field_name, cfg in fields_config.items():
             patterns = cfg.get("match", [])
             for pattern in patterns:
-                if pattern.upper() in loc:
+                if pattern.upper() in loc_upper:
                     mapped = field_name
                     break
             if mapped:
