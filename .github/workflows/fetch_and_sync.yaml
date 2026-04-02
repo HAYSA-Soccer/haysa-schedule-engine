@@ -3,10 +3,12 @@ name: Fetch and Sync Schedule
 on:
   workflow_dispatch:
   schedule:
-    # 5 AM–7 PM Eastern (09:00–23:55 UTC)
-    - cron: "*/5 9-23 * * *"
-    # 8 PM–11 PM Eastern (00:00–03:00 UTC)
-    - cron: "*/5 0-3 * * *"
+    # Every 5 minutes from 8 AM–9 PM Eastern (12–01 UTC)
+    - cron: "*/5 12-23 * * *"
+    - cron: "*/5 0 * * *"
+
+    # Once per hour from 9 PM–8 AM Eastern (01–12 UTC)
+    - cron: "0 1-11 * * *"
 
 jobs:
   run-engine:
