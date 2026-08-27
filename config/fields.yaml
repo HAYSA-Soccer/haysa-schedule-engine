@@ -18,5 +18,9 @@ fields:
 
   SUMNER:
     match:
-      - "TODO-SUMNER-CODE"
+      - "H-Su"                # Sumner codes
+      - "Sumner"
+      - "H-SJ"                # Sean Joyce codes
+      - "Sean Joyce"
+      - "Holbrook Sean Joyce"
     calendar: ${CAL_SUMNER}
