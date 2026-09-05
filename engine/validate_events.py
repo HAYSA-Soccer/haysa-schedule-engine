@@ -1,89 +1,96 @@
+import re
 from datetime import datetime
-import yaml
-import os
+
+# ============================================================
+# VALIDATE + NORMALIZE EVENTS FROM parse_ics.py
+# ============================================================
 
 def validate_events(events):
-    """
-    Validates parsed ICS events and returns:
-    - valid_events: events ready for calendar sync
-    - errors: list of validation issues
-    """
-
     valid = []
     errors = []
 
-    # Load YAML for optional game mapping
-    try:
-        with open("config/fields.yaml") as f:
-            fields_config = yaml.safe_load(f).get("fields", {})
-    except Exception as ex:
-        return [], [f"Failed to load fields.yaml: {ex}"]
-
     for e in events:
-        eid = e.get("event_id")
+        try:
+            # ------------------------------------------------------------
+            # 1. Extract ICS field code from the ICS location string
+            # ------------------------------------------------------------
+            # Example ICS location:
+            #   "H-SJ3, Holbrook Sean Joyce Field"
+            #
+            # We MUST extract "H-SJ3" because the Google Apps Script backend
+            # depends on this exact ICS FIELD CODE for FieldMapping lookup.
+            # ------------------------------------------------------------
+            loc_raw = e.get("location") or ""
+            ics_code = loc_raw.split(",")[0].strip()  # <-- CRITICAL FIX
 
-        # Required fields
-        if not e.get("start") or not e.get("end"):
-            errors.append(f"{eid}: Missing start or end time")
-            continue
+            if not ics_code:
+                raise ValueError(f"Missing ICS field code in location: {loc_raw}")
 
-        if e["end"] <= e["start"]:
-            errors.append(f"{eid}: End time is before start time")
-            continue
+            # ------------------------------------------------------------
+            # 2. Store ICS FIELD CODE in `field` (column 4 in Events sheet)
+            # ------------------------------------------------------------
+            e["field"] = ics_code
 
-        if not e.get("summary"):
-            errors.append(f"{eid}: Missing summary")
-            continue
+            # ------------------------------------------------------------
+            # 3. Store full ICS location text for display (optional)
+            # ------------------------------------------------------------
+            e["field_display"] = loc_raw.strip()
 
-        loc_raw = e.get("location") or ""
-        loc = loc_raw.lower().strip()
+            # ------------------------------------------------------------
+            # 4. Derive canonical field group (SUMNER/SEAN JOYCE, TURF, etc.)
+            # ------------------------------------------------------------
+            # This matches your YAML logic and your Apps Script canonical names.
+            # ------------------------------------------------------------
+            canonical = derive_canonical_from_ics(ics_code)
+            e["field_group"] = canonical
 
-        if not loc:
-            errors.append(f"{eid}: Missing location")
-            continue
+            # ------------------------------------------------------------
+            # 5. Basic validation
+            # ------------------------------------------------------------
+            if not e.get("event_id"):
+                raise ValueError("Missing event_id")
 
-        summary = (e.get("summary") or "").lower()
-        is_practice = "practice" in summary
-        is_game = "vs" in summary
+            if not isinstance(e.get("start"), datetime):
+                raise ValueError("Invalid start datetime")
 
-        # ----------------------------------------------------
-        # HOME FILTER — ONLY LOAD HOLBROOK + AVON EVENTS
-        # ----------------------------------------------------
-        is_home = ("holbrook" in loc) or ("avon" in loc)
+            if not isinstance(e.get("end"), datetime):
+                raise ValueError("Invalid end datetime")
 
-        if not is_home:
-            # Skip away events entirely
-            continue
-
-        # ----------------------------------------------------
-        # PRACTICES → ALWAYS USE RAW ICS LOCATION
-        # ----------------------------------------------------
-        if is_practice:
-            e["field"] = loc_raw.strip()
             valid.append(e)
-            continue
 
-        # ----------------------------------------------------
-        # GAMES → PRESERVE ICS FIELD NAME
-        # ----------------------------------------------------
-        mapped = None
-        loc_upper = loc_raw.upper()
-
-        for field_name, cfg in fields_config.items():
-            patterns = cfg.get("match", [])
-            for pattern in patterns:
-                if pattern.upper() in loc_upper:
-                    mapped = field_name
-                    break
-            if mapped:
-                break
-
-        # Always preserve ICS field name for display + sheet
-        e["field"] = loc_raw.strip()
-
-        # Store canonical group separately for routing
-        e["field_group"] = mapped
-
-        valid.append(e)
+        except Exception as err:
+            errors.append(str(err))
 
     return valid, errors
+
+
+# ============================================================
+# CANONICAL FIELD GROUP LOGIC
+# ============================================================
+
+def derive_canonical_from_ics(ics_code: str):
+    """
+    Convert ICS field codes into canonical field groups.
+    This matches your FieldMapping + FieldComplexes logic.
+    """
+
+    code = ics_code.upper()
+
+    # SUMNER / SEAN JOYCE
+    if code.startswith("H-SJ") or code.startswith("H-SU"):
+        return "SUMNER/SEAN JOYCE"
+
+    # BUTLER
+    if code.startswith("H-BU"):
+        return "BUTLER"
+
+    # TURF
+    if code.startswith("H-TU"):
+        return "TURF"
+
+    # BROOKVILLE (example — adjust if needed)
+    if code.startswith("H-BR"):
+        return "BROOKVILLE"
+
+    # Default fallback
+    return "UNKNOWN"
