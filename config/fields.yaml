@@ -16,11 +16,22 @@ fields:
       - "TODO-BUTLER-CODE"
     calendar: ${CAL_BUTLER}
 
-  SUMNER:
+  SUMNER_SEAN_JOYCE:
     match:
-      - "H-Su"                # Sumner codes
-      - "Sumner"
-      - "H-SJ"                # Sean Joyce codes
-      - "Sean Joyce"
+      # Sumner field codes
+      - "H-Su"                     # H-Su1, H-Su2
+      - "Holbrook Sumner Field"    # Full ICS name
+      - "Sumner Field"             # Sumner Field 1/2
+
+      # Sean Joyce field codes
+      - "H-SJ"                     # H-SJ3, H-SJ4
+      - "Sean Joyce"               # Sean Joyce Field 3/4
       - "Holbrook Sean Joyce"
+
+      # Unified naming used by TeamSideline for 3/4 games
+      - "Sumner/Sean Joyce"
+
+      # SJ surface codes (SJ1A, SJ1B, SJ2, SJ3, SJ4)
+      - "SJ"
+
     calendar: ${CAL_SUMNER}
