@@ -56,7 +56,7 @@ def validate_events(events):
             continue
 
         # ----------------------------------------------------
-        # PRACTICES → USE RAW ICS LOCATION
+        # PRACTICES → ALWAYS USE RAW ICS LOCATION
         # ----------------------------------------------------
         if is_practice:
             e["field"] = loc_raw.strip()
@@ -64,7 +64,7 @@ def validate_events(events):
             continue
 
         # ----------------------------------------------------
-        # GAMES → OPTIONAL YAML MAPPING
+        # GAMES → PRESERVE ICS FIELD NAME
         # ----------------------------------------------------
         mapped = None
         loc_upper = loc_raw.upper()
@@ -78,11 +78,11 @@ def validate_events(events):
             if mapped:
                 break
 
-        # If YAML mapping fails, fall back to raw ICS location
-        if mapped:
-            e["field"] = mapped
-        else:
-            e["field"] = loc_raw.strip()
+        # Always preserve ICS field name for display + sheet
+        e["field"] = loc_raw.strip()
+
+        # Store canonical group separately for routing
+        e["field_group"] = mapped
 
         valid.append(e)
 
