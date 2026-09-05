@@ -138,3 +138,54 @@ def upsert_events_to_sheet(events):
     # UPDATE LAST UPDATED TIMESTAMP
     # -----------------------------
     update_last_updated_timestamp(sheet_id)
+
+
+
+# -----------------------------
+# LOAD FIELD MAPPING
+# -----------------------------
+def load_field_mapping():
+    """
+    Loads FieldMapping sheet into a Python dict.
+
+    Returns:
+        {
+            "H-HST1": {
+                "canonical_field": "TURF",
+                "surface": "1",
+                "ics_match": "H-HST1, Turf 1, Holbrook High School - Turf 1, Holbrook Turf 1",
+                "practiceAllowed": True,
+                "gameAllowed": False,
+                "enabled": True
+            },
+            ...
+        }
+    """
+
+    sheet_id = os.environ["GOOGLE_SHEET_ID"]
+    sheet = get_sheet(sheet_id, "FieldMapping")
+    values = sheet.get_all_values()
+
+    headers = values[0]
+    rows = values[1:]
+
+    idx = {h: i for i, h in enumerate(headers)}
+
+    mapping = {}
+
+    for r in rows:
+        abbr = r[idx["abbreviation"]].strip()
+        if not abbr:
+            continue
+
+        mapping[abbr] = {
+            "canonical_field": r[idx["canonical_field"]].strip(),
+            "surface": r[idx["surface"]].strip(),
+            "ics_match": r[idx["ics_match"]].strip(),
+            "practiceAllowed": r[idx["practiceAllowed"]].strip().lower() == "yes",
+            "gameAllowed": r[idx["gameAllowed"]].strip().lower() == "yes",
+            "enabled": r[idx["enabled"]].strip().lower() == "yes",
+        }
+
+    return mapping
+
