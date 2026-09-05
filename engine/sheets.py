@@ -46,8 +46,6 @@ def classify_event(e):
 # -----------------------------
 # WRITE LAST UPDATED TIMESTAMP
 # -----------------------------
-
-
 def update_last_updated_timestamp(sheet_id):
     creds = Credentials.from_service_account_info(
         SERVICE_ACCOUNT_INFO,
@@ -106,8 +104,10 @@ def upsert_events_to_sheet(events):
             date,
             start_time,
             end_time,
-            e.get("field", ""),                 # validator sets this
-            classify_event(e),                  # <-- CLASSIFICATION
+            e.get("field", ""),                 # ICS abbreviation
+            e.get("field_display", ""),         # NEW
+            e.get("field_group", ""),           # NEW canonical field
+            classify_event(e),                  # type
             e.get("team", ""),
             e.get("summary") or "",
             "ICS",
@@ -126,8 +126,9 @@ def upsert_events_to_sheet(events):
     # Write back (header + rows)
     header = [
         "event_id", "date", "start_time", "end_time", "field",
-        "type", "team", "summary", "source", "status", "validation_status",
-        "calendar_event_id"
+        "field_display", "field_group",     # NEW
+        "type", "team", "summary", "source", "status",
+        "validation_status", "calendar_event_id"
     ]
 
     sheet.clear()
@@ -140,26 +141,12 @@ def upsert_events_to_sheet(events):
     update_last_updated_timestamp(sheet_id)
 
 
-
 # -----------------------------
 # LOAD FIELD MAPPING
 # -----------------------------
 def load_field_mapping():
     """
     Loads FieldMapping sheet into a Python dict.
-
-    Returns:
-        {
-            "H-HST1": {
-                "canonical_field": "TURF",
-                "surface": "1",
-                "ics_match": "H-HST1, Turf 1, Holbrook High School - Turf 1, Holbrook Turf 1",
-                "practiceAllowed": True,
-                "gameAllowed": False,
-                "enabled": True
-            },
-            ...
-        }
     """
 
     sheet_id = os.environ["GOOGLE_SHEET_ID"]
@@ -188,4 +175,3 @@ def load_field_mapping():
         }
 
     return mapping
-
