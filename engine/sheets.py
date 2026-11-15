@@ -258,7 +258,7 @@ def load_field_mapping():
         "FieldMapping"
     )
 
-    valueseet.get_all_values()
+    values = sheet.get_all_values()
 
     headers = values[0]
     rows = values[1:]
