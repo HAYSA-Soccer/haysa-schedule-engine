@@ -7,6 +7,7 @@ from engine.validate_events import validate_events
 
 from engine.sheets import (
     upsert_events_to_sheet,
+    upsert_ts_games_to_sheet,
     load_field_mapping
 )
 
@@ -20,7 +21,10 @@ def main():
 
     print("Parsing ICS...")
     events = parse_ics(ics_text)
-
+    
+    print("Updating TS_Games...")
+    upsert_ts_games_to_sheet(events)
+    
     print("Loading FieldMapping...")
     field_mapping = load_field_mapping()
 
@@ -53,12 +57,17 @@ def main():
     if second_sheet_id:
 
         print("Updating Master_Calendar_...")
-
+    
         upsert_events_to_sheet(
             valid,
             second_sheet_id
         )
-
+    
+        upsert_ts_games_to_sheet(
+            events,
+            second_sheet_id
+        )
+    
         print("Master_Calendar_ updated.")
 
     else:
