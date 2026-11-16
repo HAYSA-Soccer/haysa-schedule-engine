@@ -372,14 +372,23 @@ def upsert_ts_games_to_sheet(
         "summary",
         "location",
         "source"
-
+    
     ]
-
+    
+    rows.sort(
+        key=lambda r: (
+            r[1],  # date
+            r[2],  # start_time
+            r[4]   # team
+        )
+    )
+    
     sheet.clear()
-
+    
     sheet.append_row(
         header
     )
+
 
     if rows:
 
