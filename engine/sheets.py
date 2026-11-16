@@ -286,31 +286,45 @@ def upsert_ts_games_to_sheet(
             or ""
         ).strip()
 
-        if "travel" not in summary.lower():
+        # ONLY GAME RECORDS
+        if (
+            " vs. " not in summary
+            and
+            " vs " not in summary
+        ):
             continue
-
-        team = ""
-        opponent = ""
 
         if " vs. " in summary:
 
-            parts = summary.split(
+            left, right = summary.split(
                 " vs. ",
                 1
             )
 
-            team = parts[0].strip()
-            opponent = parts[1].strip()
+        else:
 
-        elif " vs " in summary:
-
-            parts = summary.split(
+            left, right = summary.split(
                 " vs ",
                 1
             )
 
-            team = parts[0].strip()
-            opponent = parts[1].strip()
+        team = ""
+        opponent = ""
+        home_away = ""
+
+        # Home game
+        if "Travel" in left:
+
+            team = left.strip()
+            opponent = right.strip()
+            home_away = "HOME"
+
+        # Away game
+        else:
+
+            team = right.strip()
+            opponent = left.strip()
+            home_away = "AWAY"
 
         rows.append([
 
@@ -333,6 +347,8 @@ def upsert_ts_games_to_sheet(
 
             opponent,
 
+            home_away,
+
             summary,
 
             e.get(
@@ -352,6 +368,7 @@ def upsert_ts_games_to_sheet(
         "end_time",
         "team",
         "opponent",
+        "home_away",
         "summary",
         "location",
         "source"
