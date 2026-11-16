@@ -240,6 +240,137 @@ def upsert_events_to_sheet(
         sheet_id
     )
 
+def upsert_ts_games_to_sheet(
+    events,
+    sheet_id=None
+):
+
+    if sheet_id is None:
+        sheet_id = os.environ[
+            "GOOGLE_SHEET_ID"
+        ]
+
+    creds = Credentials.from_service_account_info(
+        SERVICE_ACCOUNT_INFO,
+        scopes=SCOPES
+    )
+
+    client = gspread.authorize(
+        creds
+    )
+
+    spreadsheet = client.open_by_key(
+        sheet_id
+    )
+
+    try:
+
+        sheet = spreadsheet.worksheet(
+            "TS_Games"
+        )
+
+    except gspread.exceptions.WorksheetNotFound:
+
+        sheet = spreadsheet.add_worksheet(
+            title="TS_Games",
+            rows=5000,
+            cols=20
+        )
+
+    rows = []
+
+    for e in events:
+
+        summary = (
+            e.get("summary")
+            or ""
+        ).strip()
+
+        if "travel" not in summary.lower():
+            continue
+
+        team = ""
+        opponent = ""
+
+        if " vs. " in summary:
+
+            parts = summary.split(
+                " vs. ",
+                1
+            )
+
+            team = parts[0].strip()
+            opponent = parts[1].strip()
+
+        elif " vs " in summary:
+
+            parts = summary.split(
+                " vs ",
+                1
+            )
+
+            team = parts[0].strip()
+            opponent = parts[1].strip()
+
+        rows.append([
+
+            e.get(
+                "event_id",
+                ""
+            ),
+
+            e["start"]
+                .date()
+                .isoformat(),
+
+            e["start"]
+                .strftime("%H:%M"),
+
+            e["end"]
+                .strftime("%H:%M"),
+
+            team,
+
+            opponent,
+
+            summary,
+
+            e.get(
+                "location",
+                ""
+            ),
+
+            "ICS"
+
+        ])
+
+    header = [
+
+        "event_id",
+        "date",
+        "start_time",
+        "end_time",
+        "team",
+        "opponent",
+        "summary",
+        "location",
+        "source"
+
+    ]
+
+    sheet.clear()
+
+    sheet.append_row(
+        header
+    )
+
+    if rows:
+
+        sheet.append_rows(
+            rows,
+            value_input_option="USER_ENTERED"
+        )
+
 
 # -----------------------------
 # LOAD FIELD MAPPING
